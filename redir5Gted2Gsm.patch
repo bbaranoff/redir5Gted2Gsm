@@ -1,0 +1,572 @@
+--- ./lib/include/srsran/asn1/liblte_mme.h	2023-02-11 22:26:32.626162159 +0100
++++ ./lib/include/srsran/asn1/liblte_mme.h	2023-02-11 22:21:09.268075398 +0100
+@@ -3201,6 +3201,77 @@
+ // Structs
+ // Functions
+ // TODO
++/*********************************************************************
++    Message Name: Tracking Area Update Request
++
++    Description: Sent by the UE to the network to initiate a tracking
++                 area updating procedure.
++
++    Document Reference: 24.301 v10.2.0 Section 8.2.29
++*********************************************************************/
++// Defines
++#define LIBLTE_MME_NAS_KEY_SET_IDENTIFIER_IEI                         0xB
++#define LIBLTE_MME_CIPHERING_KEY_SEQUENCE_NUMBER_IEI                  0x8
++#define LIBLTE_MME_NONCE_UE_IEI                                       0x55
++#define LIBLTE_MME_UE_NETWORK_CAPABILITY_IEI                          0x58
++#define LIBLTE_MME_UE_RADIO_CAPABILITY_INFORMATION_UPDATE_NEEDED_IEI  0xA
++#define LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_DEVICE_PROPERTIES_IEI 0xD
++// Enums
++// Structs
++typedef struct{
++    LIBLTE_MME_EPS_UPDATE_TYPE_STRUCT                        eps_update_type;
++    LIBLTE_MME_NAS_KEY_SET_ID_STRUCT                         nas_ksi;
++    LIBLTE_MME_EPS_MOBILE_ID_STRUCT                          old_guti;
++    LIBLTE_MME_NAS_KEY_SET_ID_STRUCT                         non_current_native_nas_ksi;
++    LIBLTE_MME_EPS_MOBILE_ID_STRUCT                          additional_guti;
++    LIBLTE_MME_UE_NETWORK_CAPABILITY_STRUCT                  ue_network_cap;
++    LIBLTE_MME_TRACKING_AREA_ID_STRUCT                       last_visited_registered_tai;
++    LIBLTE_MME_DRX_PARAMETER_STRUCT                          drx_param;
++    LIBLTE_MME_EPS_BEARER_CONTEXT_STATUS_STRUCT              eps_bearer_context_status;
++    LIBLTE_MME_MS_NETWORK_CAPABILITY_STRUCT                  ms_network_cap;
++    LIBLTE_MME_LOCATION_AREA_ID_STRUCT                       old_lai;
++    LIBLTE_MME_MOBILE_STATION_CLASSMARK_2_STRUCT             ms_cm2;
++    LIBLTE_MME_MOBILE_STATION_CLASSMARK_3_STRUCT             ms_cm3;
++    LIBLTE_MME_SUPPORTED_CODEC_LIST_STRUCT                   supported_codecs;
++    LIBLTE_MME_VOICE_DOMAIN_PREF_AND_UE_USAGE_SETTING_STRUCT voice_domain_pref_and_ue_usage_setting;
++    LIBLTE_MME_TMSI_STATUS_ENUM                              tmsi_status;
++    LIBLTE_MME_ADDITIONAL_UPDATE_TYPE_ENUM                   additional_update_type;
++    LIBLTE_MME_GUTI_TYPE_ENUM                                old_guti_type;
++    LIBLTE_MME_DEVICE_PROPERTIES_ENUM                        device_properties;
++    uint32                                                   old_p_tmsi_signature;
++    uint32                                                   nonce_ue;
++    uint8                                                    gprs_ciphering_ksn;
++    uint8                                                    ue_radio_cap_update_needed;
++    bool                                                     non_current_native_nas_ksi_present;
++    bool                                                     gprs_ciphering_ksn_present;
++    bool                                                     old_p_tmsi_signature_present;
++    bool                                                     additional_guti_present;
++    bool                                                     nonce_ue_present;
++    bool                                                     ue_network_cap_present;
++    bool                                                     last_visited_registered_tai_present;
++    bool                                                     drx_param_present;
++    bool                                                     ue_radio_cap_update_needed_present;
++    bool                                                     eps_bearer_context_status_present;
++    bool                                                     ms_network_cap_present;
++    bool                                                     old_lai_present;
++    bool                                                     tmsi_status_present;
++    bool                                                     ms_cm2_present;
++    bool                                                     ms_cm3_present;
++    bool                                                     supported_codecs_present;
++    bool                                                     additional_update_type_present;
++    bool                                                     voice_domain_pref_and_ue_usage_setting_present;
++    bool                                                     old_guti_type_present;
++    bool                                                     device_properties_present;
++}LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT;
++// Functions
++LIBLTE_ERROR_ENUM liblte_mme_pack_tracking_area_update_request_msg(LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT *ta_update_req,
++                                                                   uint8                                               sec_hdr_type,
++                                                                   uint8                                              *key_256,
++                                                                   uint32                                              count,
++                                                                   uint8                                               direction,
++                                                                   LIBLTE_BYTE_MSG_STRUCT                             *msg);
++LIBLTE_ERROR_ENUM liblte_mme_unpack_tracking_area_update_request_msg(LIBLTE_BYTE_MSG_STRUCT                             *msg,
++                                                                     LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT *ta_update_req);
+ 
+ /*********************************************************************
+     Message Name: Uplink NAS Transport
+
+--- ./lib/src/asn1/liblte_mme.cc	2023-02-11 22:26:32.862163757 +0100
++++ ./lib/src/asn1/liblte_mme.cc	2023-02-11 22:21:09.268075398 +0100
+@@ -7478,6 +7478,441 @@
+     Document Reference: 24.301 v10.2.0 Section 8.2.29
+ *********************************************************************/
+ // TODO
++/*********************************************************************
++    Message Name: Tracking Area Update Request
++
++    Description: Sent by the UE to the network to initiate a tracking
++                 area updating procedure.
++
++    Document Reference: 24.301 v10.2.0 Section 8.2.29
++*********************************************************************/
++LIBLTE_ERROR_ENUM liblte_mme_pack_tracking_area_update_request_msg(LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT *ta_update_req,
++                                                                   uint8                                               sec_hdr_type,
++                                                                   uint8                                              *key_256,
++                                                                   uint32                                              count,
++                                                                   uint8                                               direction,
++                                                                   LIBLTE_BYTE_MSG_STRUCT                             *msg)
++{
++    if(ta_update_req == NULL || key_256 == NULL || msg == NULL)
++        return LIBLTE_ERROR_INVALID_INPUTS;
++
++    uint8 *msg_ptr = msg->msg;
++
++    if(LIBLTE_MME_SECURITY_HDR_TYPE_PLAIN_NAS != sec_hdr_type)
++    {
++        // Protocol Discriminator and Security Header Type
++        *msg_ptr = (sec_hdr_type << 4) | (LIBLTE_MME_PD_EPS_MOBILITY_MANAGEMENT);
++        msg_ptr++;
++
++        // MAC will be filled in later
++        msg_ptr += 4;
++
++        // Sequence Number
++        *msg_ptr = count & 0xFF;
++        msg_ptr++;
++    }
++
++    // Protocol Discriminator and Security Header Type
++    *msg_ptr = (LIBLTE_MME_SECURITY_HDR_TYPE_PLAIN_NAS << 4) | (LIBLTE_MME_PD_EPS_MOBILITY_MANAGEMENT);
++    msg_ptr++;
++
++    // Message Type
++    *msg_ptr = LIBLTE_MME_MSG_TYPE_TRACKING_AREA_UPDATE_REQUEST;
++    msg_ptr++;
++
++    // EPS Update Type & NAS Key Set Identifier
++    *msg_ptr = 0;
++    liblte_mme_pack_eps_update_type_ie(&ta_update_req->eps_update_type, 0, &msg_ptr);
++    liblte_mme_pack_nas_key_set_id_ie(&ta_update_req->nas_ksi, 4, &msg_ptr);
++    msg_ptr++;
++
++    // Old GUTI
++    liblte_mme_pack_eps_mobile_id_ie(&ta_update_req->old_guti, &msg_ptr);
++
++    // Non-current Native NAS Key Set Identifier
++    if(ta_update_req->non_current_native_nas_ksi_present)
++    {
++        *msg_ptr = LIBLTE_MME_NAS_KEY_SET_IDENTIFIER_IEI << 4;
++        liblte_mme_pack_nas_key_set_id_ie(&ta_update_req->non_current_native_nas_ksi, 0, &msg_ptr);
++        msg_ptr++;
++    }
++
++    // GPRS Ciphering Key Sequence Number
++    if(ta_update_req->gprs_ciphering_ksn_present)
++    {
++        *msg_ptr = LIBLTE_MME_CIPHERING_KEY_SEQUENCE_NUMBER_IEI << 4;
++        liblte_mme_pack_ciphering_key_sequence_number_ie(ta_update_req->gprs_ciphering_ksn, 0, &msg_ptr);
++        msg_ptr++;
++    }
++
++    // Old P-TMSI Signature
++    if(ta_update_req->old_p_tmsi_signature_present)
++    {
++        *msg_ptr = LIBLTE_MME_P_TMSI_SIGNATURE_IEI;
++        msg_ptr++;
++        liblte_mme_pack_p_tmsi_signature_ie(ta_update_req->old_p_tmsi_signature, &msg_ptr);
++    }
++
++    // Additional GUTI
++    if(ta_update_req->additional_guti_present)
++    {
++        *msg_ptr = LIBLTE_MME_ADDITIONAL_GUTI_IEI;
++        msg_ptr++;
++        liblte_mme_pack_eps_mobile_id_ie(&ta_update_req->additional_guti, &msg_ptr);
++    }
++
++    // NONCE UE
++    if(ta_update_req->nonce_ue_present)
++    {
++        *msg_ptr = LIBLTE_MME_NONCE_UE_IEI;
++        msg_ptr++;
++        liblte_mme_pack_nonce_ie(ta_update_req->nonce_ue, &msg_ptr);
++    }
++
++    // UE Network Capability
++    if(ta_update_req->ue_network_cap_present)
++    {
++        *msg_ptr = LIBLTE_MME_UE_NETWORK_CAPABILITY_IEI;
++        msg_ptr++;
++        liblte_mme_pack_ue_network_capability_ie(&ta_update_req->ue_network_cap, &msg_ptr);
++    }
++
++    // Last Visited Registered TAI
++    if(ta_update_req->last_visited_registered_tai_present)
++    {
++        *msg_ptr = LIBLTE_MME_LAST_VISITED_REGISTERED_TAI_IEI;
++        msg_ptr++;
++        liblte_mme_pack_tracking_area_id_ie(&ta_update_req->last_visited_registered_tai, &msg_ptr);
++    }
++
++    // DRX Parameter
++    if(ta_update_req->drx_param_present)
++    {
++        *msg_ptr = LIBLTE_MME_DRX_PARAMETER_IEI;
++        msg_ptr++;
++        liblte_mme_pack_drx_parameter_ie(&ta_update_req->drx_param, &msg_ptr);
++    }
++
++    // UE Radio Capability Information Update Needed
++    if(ta_update_req->ue_radio_cap_update_needed_present)
++    {
++        *msg_ptr = LIBLTE_MME_UE_RADIO_CAPABILITY_INFORMATION_UPDATE_NEEDED_IEI << 4;
++        liblte_mme_pack_ue_radio_capability_update_needed_ie(ta_update_req->ue_radio_cap_update_needed, 0, &msg_ptr);
++        msg_ptr++;
++    }
++
++    // EPS Bearer Context Status
++    if(ta_update_req->eps_bearer_context_status_present)
++    {
++        *msg_ptr = LIBLTE_MME_EPS_BEARER_CONTEXT_STATUS_IEI;
++        msg_ptr++;
++        liblte_mme_pack_eps_bearer_context_status_ie(&ta_update_req->eps_bearer_context_status, &msg_ptr);
++    }
++
++    // MS Network Capability
++    if(ta_update_req->ms_network_cap_present)
++    {
++        *msg_ptr = LIBLTE_MME_MS_NETWORK_CAPABILITY_IEI;
++        msg_ptr++;
++        liblte_mme_pack_ms_network_capability_ie(&ta_update_req->ms_network_cap, &msg_ptr);
++    }
++
++    // Old Location Area Identification
++    if(ta_update_req->old_lai_present)
++    {
++        *msg_ptr = LIBLTE_MME_LOCATION_AREA_IDENTIFICATION_IEI;
++        msg_ptr++;
++        liblte_mme_pack_location_area_id_ie(&ta_update_req->old_lai, &msg_ptr);
++    }
++
++    // TMSI Status
++    if(ta_update_req->tmsi_status_present)
++    {
++        *msg_ptr = LIBLTE_MME_TMSI_STATUS_IEI << 4;
++        liblte_mme_pack_tmsi_status_ie(ta_update_req->tmsi_status, 0, &msg_ptr);
++        msg_ptr++;
++    }
++
++    // Mobile Station Classmark 2
++    if(ta_update_req->ms_cm2_present)
++    {
++        *msg_ptr = LIBLTE_MME_MS_CLASSMARK_2_IEI;
++        msg_ptr++;
++        liblte_mme_pack_mobile_station_classmark_2_ie(&ta_update_req->ms_cm2, &msg_ptr);
++    }
++
++    // Mobile Station Classmark 3
++    if(ta_update_req->ms_cm3_present)
++    {
++        *msg_ptr = LIBLTE_MME_MS_CLASSMARK_3_IEI;
++        msg_ptr++;
++        liblte_mme_pack_mobile_station_classmark_3_ie(&ta_update_req->ms_cm3, &msg_ptr);
++    }
++
++    // Supported Codecs
++    if(ta_update_req->supported_codecs_present)
++    {
++        *msg_ptr = LIBLTE_MME_SUPPORTED_CODEC_LIST_IEI;
++        msg_ptr++;
++        liblte_mme_pack_supported_codec_list_ie(&ta_update_req->supported_codecs, &msg_ptr);
++    }
++
++    // Additional Update Type
++    if(ta_update_req->additional_update_type_present)
++    {
++        *msg_ptr = LIBLTE_MME_ADDITIONAL_UPDATE_TYPE_IEI << 4;
++        liblte_mme_pack_additional_update_type_ie(ta_update_req->additional_update_type, 0, &msg_ptr);
++        msg_ptr++;
++    }
++
++    // Voice Domain Preference and UE's Usage Setting
++    if(ta_update_req->voice_domain_pref_and_ue_usage_setting_present)
++    {
++        *msg_ptr = LIBLTE_MME_VOICE_DOMAIN_PREF_AND_UE_USAGE_SETTING_IEI;
++        msg_ptr++;
++        liblte_mme_pack_voice_domain_pref_and_ue_usage_setting_ie(&ta_update_req->voice_domain_pref_and_ue_usage_setting, &msg_ptr);
++    }
++
++    // Old GUTI Type
++    if(ta_update_req->old_guti_type_present)
++    {
++        *msg_ptr = LIBLTE_MME_GUTI_TYPE_IEI << 4;
++        liblte_mme_pack_guti_type_ie(ta_update_req->old_guti_type, 0, &msg_ptr);
++        msg_ptr++;
++    }
++
++    // Device Properties
++    if(ta_update_req->device_properties_present)
++    {
++        *msg_ptr = LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_DEVICE_PROPERTIES_IEI << 4;
++        liblte_mme_pack_device_properties_ie(ta_update_req->device_properties, 0, &msg_ptr);
++        msg_ptr++;
++    }
++
++    // Fill in the number of bytes used
++    msg->N_bytes = msg_ptr - msg->msg;
++
++    // Calculate MAC
++    if(LIBLTE_MME_SECURITY_HDR_TYPE_PLAIN_NAS != sec_hdr_type)
++        /*liblte_security_128_eia2(&key_256[16],
++                                 count,
++                                 0,
++                                 direction,
++                                 &msg->msg[5],
++                                 msg->N_bytes-5,
++                                 &msg->msg[1]);
++*/
++    return LIBLTE_SUCCESS;
++}
++LIBLTE_ERROR_ENUM liblte_mme_unpack_tracking_area_update_request_msg(LIBLTE_BYTE_MSG_STRUCT                             *msg,
++                                                                     LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT *ta_update_req)
++{
++    if(msg == NULL || ta_update_req == NULL)
++        return LIBLTE_ERROR_INVALID_INPUTS;
++
++    uint8 *msg_ptr = msg->msg;
++
++    // Security Header Type
++    if(LIBLTE_MME_SECURITY_HDR_TYPE_PLAIN_NAS == ((msg->msg[0] & 0xF0) >> 4))
++    {
++        msg_ptr++;
++    }else{
++        msg_ptr += 7;
++    }
++
++    // Skip Message Type
++    msg_ptr++;
++
++    // EPS Update Type & NAS Key Set Identifier
++    liblte_mme_unpack_eps_update_type_ie(&msg_ptr, 0, &ta_update_req->eps_update_type);
++    liblte_mme_unpack_nas_key_set_id_ie(&msg_ptr, 4, &ta_update_req->nas_ksi);
++    msg_ptr++;
++
++    // Old GUTI
++    liblte_mme_unpack_eps_mobile_id_ie(&msg_ptr, &ta_update_req->old_guti);
++
++    // Non-current Native NAS Key Set Identifier
++    ta_update_req->non_current_native_nas_ksi_present = false;
++    if((LIBLTE_MME_NAS_KEY_SET_IDENTIFIER_IEI << 4) == (*msg_ptr & 0xF0))
++    {
++        liblte_mme_unpack_nas_key_set_id_ie(&msg_ptr, 0, &ta_update_req->non_current_native_nas_ksi);
++        msg_ptr++;
++        ta_update_req->non_current_native_nas_ksi_present = true;
++    }
++
++    // GPRS Ciphering Key Sequence Number
++    ta_update_req->gprs_ciphering_ksn_present = false;
++    if((LIBLTE_MME_CIPHERING_KEY_SEQUENCE_NUMBER_IEI << 4) == (*msg_ptr & 0xF0))
++    {
++        liblte_mme_unpack_ciphering_key_sequence_number_ie(&msg_ptr, 0, &ta_update_req->gprs_ciphering_ksn);
++        msg_ptr++;
++        ta_update_req->gprs_ciphering_ksn_present = true;
++    }
++
++    // Old P-TMSI Signature
++    ta_update_req->old_p_tmsi_signature_present = false;
++    if(LIBLTE_MME_P_TMSI_SIGNATURE_IEI == *msg_ptr)
++    {
++        msg_ptr++;
++        liblte_mme_unpack_p_tmsi_signature_ie(&msg_ptr, &ta_update_req->old_p_tmsi_signature);
++        ta_update_req->old_p_tmsi_signature_present = true;
++    }
++
++    // Additional GUTI
++    ta_update_req->additional_guti_present = false;
++    if(LIBLTE_MME_ADDITIONAL_GUTI_IEI == *msg_ptr)
++    {
++        msg_ptr++;
++        liblte_mme_unpack_eps_mobile_id_ie(&msg_ptr, &ta_update_req->additional_guti);
++        ta_update_req->additional_guti_present = true;
++    }
++
++    // NONCE UE
++    ta_update_req->nonce_ue_present = false;
++    if(LIBLTE_MME_NONCE_UE_IEI == *msg_ptr)
++    {
++        msg_ptr++;
++        liblte_mme_unpack_nonce_ie(&msg_ptr, &ta_update_req->nonce_ue);
++        ta_update_req->nonce_ue_present = true;
++    }
++
++    // UE Network Capability
++    ta_update_req->ue_network_cap_present = false;
++    if(LIBLTE_MME_UE_NETWORK_CAPABILITY_IEI == *msg_ptr)
++    {
++        msg_ptr++;
++        liblte_mme_unpack_ue_network_capability_ie(&msg_ptr, &ta_update_req->ue_network_cap);
++        ta_update_req->ue_network_cap_present = true;
++    }
++
++    // Last Visited Registered TAI
++    ta_update_req->last_visited_registered_tai_present = false;
++    if(LIBLTE_MME_LAST_VISITED_REGISTERED_TAI_IEI == *msg_ptr)
++    {
++        msg_ptr++;
++        liblte_mme_unpack_tracking_area_id_ie(&msg_ptr, &ta_update_req->last_visited_registered_tai);
++        ta_update_req->last_visited_registered_tai_present = true;
++    }
++
++    // DRX Parameter
++    ta_update_req->drx_param_present = false;
++    if(LIBLTE_MME_DRX_PARAMETER_IEI == *msg_ptr)
++    {
++        msg_ptr++;
++        liblte_mme_unpack_drx_parameter_ie(&msg_ptr, &ta_update_req->drx_param);
++        ta_update_req->drx_param_present = true;
++    }
++
++    // UE Radio Capability Information Update Needed
++    ta_update_req->ue_radio_cap_update_needed_present = false;
++    if((LIBLTE_MME_UE_RADIO_CAPABILITY_INFORMATION_UPDATE_NEEDED_IEI << 4) == (*msg_ptr & 0xF0))
++    {
++        liblte_mme_unpack_ue_radio_capability_update_needed_ie(&msg_ptr, 0, &ta_update_req->ue_radio_cap_update_needed);
++        msg_ptr++;
++        ta_update_req->ue_radio_cap_update_needed_present = true;
++    }
++
++    // EPS Bearer Context Status
++    ta_update_req->eps_bearer_context_status_present = false;
++    if(LIBLTE_MME_EPS_BEARER_CONTEXT_STATUS_IEI == *msg_ptr)
++    {
++        msg_ptr++;
++        liblte_mme_unpack_eps_bearer_context_status_ie(&msg_ptr, &ta_update_req->eps_bearer_context_status);
++        ta_update_req->eps_bearer_context_status_present = true;
++    }
++
++    // MS Network Capability
++    ta_update_req->ms_network_cap_present = false;
++    if(LIBLTE_MME_MS_NETWORK_CAPABILITY_IEI == *msg_ptr)
++    {
++        msg_ptr++;
++        liblte_mme_unpack_ms_network_capability_ie(&msg_ptr, &ta_update_req->ms_network_cap);
++        ta_update_req->ms_network_cap_present = true;
++    }
++
++    // Old Location Area Identification
++    ta_update_req->old_lai_present = false;
++    if(LIBLTE_MME_LOCATION_AREA_IDENTIFICATION_IEI == *msg_ptr)
++    {
++        msg_ptr++;
++        liblte_mme_unpack_location_area_id_ie(&msg_ptr, &ta_update_req->old_lai);
++        ta_update_req->old_lai_present = true;
++    }
++
++    // TMSI Status
++    ta_update_req->tmsi_status_present = false;
++    if((LIBLTE_MME_TMSI_STATUS_IEI << 4) == (*msg_ptr & 0xF0))
++    {
++        liblte_mme_unpack_tmsi_status_ie(&msg_ptr, 0, &ta_update_req->tmsi_status);
++        msg_ptr++;
++        ta_update_req->tmsi_status_present = true;
++    }
++
++    // Mobile Station Classmark 2
++    ta_update_req->ms_cm2_present = false;
++    if(LIBLTE_MME_MS_CLASSMARK_2_IEI == *msg_ptr)
++    {
++        msg_ptr++;
++        liblte_mme_unpack_mobile_station_classmark_2_ie(&msg_ptr, &ta_update_req->ms_cm2);
++        ta_update_req->ms_cm2_present = true;
++    }
++
++    // Mobile Station Classmark 3
++    ta_update_req->ms_cm3_present = false;
++    if(LIBLTE_MME_MS_CLASSMARK_3_IEI == *msg_ptr)
++    {
++        msg_ptr++;
++        liblte_mme_unpack_mobile_station_classmark_3_ie(&msg_ptr, &ta_update_req->ms_cm3);
++        ta_update_req->ms_cm3_present = true;
++    }
++
++    // Supported Codecs
++    ta_update_req->supported_codecs_present = false;
++    if(LIBLTE_MME_SUPPORTED_CODEC_LIST_IEI == *msg_ptr)
++    {
++        msg_ptr++;
++        liblte_mme_unpack_supported_codec_list_ie(&msg_ptr, &ta_update_req->supported_codecs);
++        ta_update_req->supported_codecs_present = true;
++    }
++
++    // Additional Update Type
++    ta_update_req->additional_update_type_present = false;
++    if((LIBLTE_MME_ADDITIONAL_UPDATE_TYPE_IEI << 4) == (*msg_ptr & 0xF0))
++    {
++        liblte_mme_unpack_additional_update_type_ie(&msg_ptr, 0, &ta_update_req->additional_update_type);
++        msg_ptr++;
++        ta_update_req->additional_update_type_present = true;
++    }
++
++    // Voice Domain Preference and UE's Usage Setting
++    ta_update_req->voice_domain_pref_and_ue_usage_setting_present = false;
++    if(LIBLTE_MME_VOICE_DOMAIN_PREF_AND_UE_USAGE_SETTING_IEI == *msg_ptr)
++    {
++        msg_ptr++;
++        liblte_mme_unpack_voice_domain_pref_and_ue_usage_setting_ie(&msg_ptr, &ta_update_req->voice_domain_pref_and_ue_usage_setting);
++        ta_update_req->voice_domain_pref_and_ue_usage_setting_present = true;
++    }
++
++    // Old GUTI Type
++    ta_update_req->old_guti_type_present = false;
++    if((LIBLTE_MME_GUTI_TYPE_IEI << 4) == (*msg_ptr & 0xF0))
++    {
++        liblte_mme_unpack_guti_type_ie(&msg_ptr, 0, &ta_update_req->old_guti_type);
++        msg_ptr++;
++        ta_update_req->old_guti_type_present = true;
++    }
++
++    // Device Properties
++    ta_update_req->device_properties_present = false;
++    if((LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_DEVICE_PROPERTIES_IEI << 4) == (*msg_ptr & 0xF0))
++    {
++        liblte_mme_unpack_device_properties_ie(&msg_ptr, 0, &ta_update_req->device_properties);
++        msg_ptr++;
++        ta_update_req->device_properties_present = true;
++    }
++
++    return LIBLTE_SUCCESS;
++}
+ 
+ /*********************************************************************
+     Message Name: Uplink NAS Transport
+
+--- ./lib/test/asn1/nas_decoder.cc	2023-02-11 22:26:33.590168687 +0100
++++ ./lib/test/asn1/nas_decoder.cc	2023-02-11 22:22:18.304500601 +0100
+@@ -102,12 +102,12 @@
+       LIBLTE_MME_TRACKING_AREA_UPDATE_REJECT_MSG_STRUCT ta_update_reject;
+       err = liblte_mme_unpack_tracking_area_update_reject_msg(&msg, &ta_update_reject);
+       break;
+-    /* NOT IMPLEMENTED
+-      case LIBLTE_MME_MSG_TYPE_TRACKING_AREA_UPDATE_REQUEST:
+-        LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT ta_update_request;
+-        err = liblte_mme_unpack_tracking_area_update_request_msg(&msg, &ta_update_request);
+-        break;
+-        */
++    // NOT IMPLEMENTED
++    case LIBLTE_MME_MSG_TYPE_TRACKING_AREA_UPDATE_REQUEST:
++      LIBLTE_MME_TRACKING_AREA_UPDATE_REQUEST_MSG_STRUCT ta_update_request;
++      err = liblte_mme_unpack_tracking_area_update_request_msg(&msg, &ta_update_request);
++      break;
++    /*    */
+     case LIBLTE_MME_MSG_TYPE_TRACKING_AREA_UPDATE_COMPLETE:
+       LIBLTE_MME_TRACKING_AREA_UPDATE_COMPLETE_MSG_STRUCT ta_update_complete;
+       err = liblte_mme_unpack_tracking_area_update_complete_msg(&msg, &ta_update_complete);
+Seulement dans .: redir5Gted2Gsm.patch
+Seulement dans ../srsran: redir5Gted.patch
+diff -ru ./srsenb/hdr/stack/rrc/rrc_ue.h ../srsran/srsenb/hdr/stack/rrc/rrc_ue.h
+--- ./srsenb/hdr/stack/rrc/rrc_ue.h	2023-02-11 22:26:33.642169040 +0100
++++ ../srsran/srsenb/hdr/stack/rrc/rrc_ue.h	2023-02-11 22:23:26.940935588 +0100
+@@ -173,7 +173,7 @@
+   unique_rnti_ptr<rrc_mobility> mobility_handler;
+   unique_rnti_ptr<rrc_endc>     endc_handler;
+ 
+-  bool is_csfb = false;
++  bool is_csfb = true;
+ 
+ private:
+   srsran::unique_timer activity_timer; // for basic DL/UL activity timeout
+--- ./srsenb/src/stack/rrc/rrc_ue.cc	2023-02-11 22:26:33.682169310 +0100
++++ ./srsenb/src/stack/rrc/rrc_ue.cc	2023-02-11 22:24:33.873370071 +0100
+@@ -1118,7 +1118,7 @@
+   auto&         rrc_release          = dl_dcch_msg.msg.set_c1().set_rrc_conn_release();
+   rrc_release.rrc_transaction_id     = (uint8_t)((transaction_id++) % 4);
+   rrc_conn_release_r8_ies_s& rel_ies = rrc_release.crit_exts.set_c1().set_rrc_conn_release_r8();
+-  rel_ies.release_cause              = release_cause_e::other;
++  rel_ies.release_cause              = release_cause_e::cs_fallback_high_prio_v1020;
+   if (is_csfb) {
+     if (parent->sib7.carrier_freqs_info_list.size() > 0) {
+       rel_ies.redirected_carrier_info_present = true;
